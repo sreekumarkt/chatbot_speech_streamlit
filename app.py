@@ -1,8 +1,10 @@
 import streamlit as st
 import speech_recognition as sr
-import pyttsx3
+from gtts import gTTS
 from transformers import AutoModelForCausalLM, AutoTokenizer
 import torch
+import tempfile
+import os
 
 # Initialize model
 @st.cache_resource
@@ -14,13 +16,17 @@ def load_model():
 
 tokenizer, model = load_model()
 
-# Text-to-speech engine
-engine = pyttsx3.init()
-engine.setProperty('rate', 150)
-
+# Text-to-speech engine using gTTS
 def speak(text):
-    engine.say(text)
-    engine.runAndWait()
+    tts = gTTS(text)
+    with tempfile.NamedTemporaryFile(delete=False, suffix=".mp3") as fp:
+        temp_path = fp.name
+        tts.save(temp_path)
+    audio_file = open(temp_path, 'rb')
+    audio_bytes = audio_file.read()
+    st.audio(audio_bytes, format='audio/mp3')
+    audio_file.close()
+    os.remove(temp_path)
 
 # Speech-to-text using microphone
 def listen():
